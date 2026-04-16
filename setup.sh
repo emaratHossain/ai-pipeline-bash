@@ -16,7 +16,7 @@ ok()   { echo -e "${GREEN}[ OK ]${NC} $*"; }
 hr()   { echo "──────────────────────────────────────────────────"; }
 
 hr
-echo -e "${BOLD}  AI Triage Bot (bash) — Setup Validator${NC}"
+echo -e "${BOLD}  AI Pipeline Bot (bash) — Setup Validator${NC}"
 hr
 
 # ── 1. System dependencies ────────────────────────────────────────────────────
@@ -127,12 +127,12 @@ if [[ -d "${REPO_PATH:-}/.git" ]]; then
   GIT_USER=$(git -C "$REPO_PATH" config user.name  2>/dev/null || echo "")
   GIT_EMAIL=$(git -C "$REPO_PATH" config user.email 2>/dev/null || echo "")
   if [[ -z "$GIT_USER" ]]; then
-    warn "git user.name not set — auto-setting to 'AI Triage Bot'"
-    git -C "$REPO_PATH" config user.name "AI Triage Bot"
+    warn "git user.name not set — auto-setting to 'AI Pipeline Bot'"
+    git -C "$REPO_PATH" config user.name "AI Pipeline Bot"
   fi
   if [[ -z "$GIT_EMAIL" ]]; then
-    warn "git user.email not set — auto-setting to 'bot@ai-triage.local'"
-    git -C "$REPO_PATH" config user.email "bot@ai-triage.local"
+    warn "git user.email not set — auto-setting to 'bot@ai-pipeline.local'"
+    git -C "$REPO_PATH" config user.email "bot@ai-pipeline.local"
   fi
   ok "git user: $(git -C "$REPO_PATH" config user.name) <$(git -C "$REPO_PATH" config user.email)>"
 fi
@@ -163,7 +163,7 @@ fi
 # ── 9. Script permissions ─────────────────────────────────────────────────────
 echo ""
 echo "Setting script permissions..."
-chmod +x server.sh handle_webhook.sh triage.sh implement.sh
+chmod +x server.sh handle_webhook.sh pipeline.sh implement.sh
 ok "All scripts are executable"
 
 # ── 10. Mock mode ─────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ else
   fi
   echo ""
   echo "  Start the server:  bash server.sh"
-  echo "  Test triage:       bash scripts/test-triage.sh <issue_number>"
+  echo "  Test pipeline:       bash scripts/test-pipeline.sh <issue_number>"
   echo "  Test implement:    bash scripts/test-implement.sh <issue_number>"
   echo "  View logs:         tail -f logs/server.log"
 fi

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # lib/ai.sh — Provider-agnostic AI helpers (Anthropic + OpenRouter)
 
-# Generate a triage plan as markdown text
-# Usage: ai_triage <prompt>
-ai_triage() {
+# Generate a pipeline plan as markdown text
+# Usage: ai_pipeline <prompt>
+ai_pipeline() {
   local prompt="$1"
-  local system="${TRIAGE_SYSTEM_PROMPT:-You are a senior software engineer triaging a GitHub issue. Be concise, specific, and actionable.}"
+  local system="${PIPELINE_SYSTEM_PROMPT:-You are a senior software engineer analyzing a GitHub issue. Be concise, specific, and actionable.}"
 
   if [[ "${MOCK_MODE:-false}" == "true" ]]; then
     echo "## Root Cause
@@ -54,7 +54,7 @@ Rules:
 - If no files need changing, set "files" to an empty array and explain in pr_body.'
 
   local user_prompt
-  user_prompt=$(printf 'Issue Title: %s\n\nTriage Plan:\n%s\n\nRepo Context:\n%s\n\nImplement the fix following the plan exactly.' \
+  user_prompt=$(printf 'Issue Title: %s\n\nPipeline Plan:\n%s\n\nRepo Context:\n%s\n\nImplement the fix following the plan exactly.' \
     "$issue_title" "$plan" "$context")
 
   if [[ "${MOCK_MODE:-false}" == "true" ]]; then
@@ -92,7 +92,7 @@ Rules:
 _anthropic_text() {
   local system="$1"
   local user="$2"
-  local model="${TRIAGE_MODEL:-claude-sonnet-4-6}"
+  local model="${PIPELINE_MODEL:-claude-sonnet-4-6}"
   local max_tokens="${MAX_TOKENS:-4096}"
 
   local payload

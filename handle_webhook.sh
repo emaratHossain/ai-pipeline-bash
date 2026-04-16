@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # handle_webhook.sh — Reads a raw HTTP request from stdin (via socat),
-# verifies the HMAC signature, deduplicates, and dispatches to triage/implement.
+# verifies the HMAC signature, deduplicates, and dispatches to pipeline/implement.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -104,9 +104,9 @@ case "$EVENT" in
     if [[ "$ACTION" == "opened" ]]; then
       ISSUE_JSON=$(echo "$BODY" | jq -c '.issue')
       ISSUE_NUMBER=$(echo "$BODY" | jq -r '.issue.number')
-      log "Dispatching triage for issue #$ISSUE_NUMBER"
-      setsid bash "$SCRIPT_DIR/triage.sh" "$ISSUE_JSON" \
-        >> "logs/triage-${ISSUE_NUMBER}.log" 2>&1 &
+      log "Dispatching pipeline for issue #$ISSUE_NUMBER"
+      setsid bash "$SCRIPT_DIR/pipeline.sh" "$ISSUE_JSON" \
+        >> "logs/pipeline-${ISSUE_NUMBER}.log" 2>&1 &
       disown
     fi
     ;;

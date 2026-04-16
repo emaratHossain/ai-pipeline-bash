@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# implement.sh — Implement the approved triage plan: git branch, AI edits, PR.
+# implement.sh — Implement the approved pipeline plan: git branch, AI edits, PR.
 # Called by handle_webhook.sh in background with: <issue_number> <issue_title>
 
 set -euo pipefail
@@ -61,16 +61,16 @@ fi
 # ── Validate git config ───────────────────────────────────────────────────────
 GIT_USER=$(git -C "$REPO_PATH" config user.name  2>/dev/null || echo "")
 GIT_EMAIL=$(git -C "$REPO_PATH" config user.email 2>/dev/null || echo "")
-[[ -z "$GIT_USER"  ]] && git -C "$REPO_PATH" config user.name  "AI Triage Bot"
-[[ -z "$GIT_EMAIL" ]] && git -C "$REPO_PATH" config user.email "bot@ai-triage.local"
+[[ -z "$GIT_USER"  ]] && git -C "$REPO_PATH" config user.name  "AI Pipeline Bot"
+[[ -z "$GIT_EMAIL" ]] && git -C "$REPO_PATH" config user.email "bot@ai-pipeline.local"
 
-# ── Fetch triage plan comment ─────────────────────────────────────────────────
+# ── Fetch pipeline plan comment ─────────────────────────────────────────────────
 log "Fetching plan comment from GitHub"
 PLAN=$(get_plan_comment "$ISSUE_NUMBER")
 
 if [[ -z "$PLAN" ]]; then
-  log "ERROR: No triage plan comment found for issue #${ISSUE_NUMBER}"
-  log "Make sure the bot posted a '## 🤖 AI Triage Plan' comment before /approve"
+  log "ERROR: No pipeline plan comment found for issue #${ISSUE_NUMBER}"
+  log "Make sure the bot posted a '## 🤖 AI Pipeline Plan' comment before /approve"
   exit 1
 fi
 
@@ -146,7 +146,7 @@ fix: implement solution for issue #${ISSUE_NUMBER}
 
 ${ISSUE_TITLE}
 
-Co-authored-by: AI Triage Bot <bot@ai-triage.local>
+Co-authored-by: AI Pipeline Bot <bot@ai-pipeline.local>
 MSG
 )
 
@@ -164,7 +164,7 @@ ${PR_BODY}
 ---
 Closes #${ISSUE_NUMBER}
 
-*Implemented by [AI Triage Bot (bash)](https://github.com)*
+*Implemented by [AI Pipeline Bot (bash)](https://github.com)*
 BODY
 )
 

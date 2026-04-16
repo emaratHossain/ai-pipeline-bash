@@ -65,7 +65,7 @@ get_issue_comments() {
   echo "$all"
 }
 
-# Get the bot's triage plan comment body
+# Get the bot's pipeline plan comment body
 # Usage: get_plan_comment <issue_number>
 get_plan_comment() {
   local issue_number="$1"
@@ -74,7 +74,7 @@ get_plan_comment() {
 
   echo "$comments" | jq -r \
     --arg bot "$BOT_USERNAME" \
-    '.[] | select(.user.login == $bot) | select(.body | contains("## 🤖 AI Triage Plan")) | .body' \
+    '.[] | select(.user.login == $bot) | select(.body | contains("## 🤖 AI Pipeline Plan")) | .body' \
     | tail -1
 }
 

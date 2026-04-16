@@ -9,7 +9,7 @@ A lightweight GitHub bot that automatically analyzes new issues with AI and impl
 1. **A new issue is opened** on your GitHub repo
 2. **The bot analyzes it** using AI (Anthropic Claude or OpenRouter) and posts a plan comment like:
 
-   > ## 🤖 AI Triage Plan
+   > ## 🤖 AI Pipeline Plan
    > **Type:** Bug Fix
    > **Affected files:** `src/handler.js`
    > ### Root Cause / Summary
@@ -95,11 +95,11 @@ The bot is now listening. Open an issue on your repo to test it.
 
 ## Testing Without a Real Webhook
 
-You can trigger triage or implementation manually:
+You can trigger pipeline or implementation manually:
 
 ```bash
-# Simulate triage on an existing issue
-bash scripts/test-triage.sh <issue_number>
+# Simulate pipeline on an existing issue
+bash scripts/test-pipeline.sh <issue_number>
 
 # Simulate implementation on an approved issue
 bash scripts/test-implement.sh <issue_number>
@@ -115,7 +115,7 @@ To test without making real AI calls, set `MOCK_MODE=true` in your `.env`.
 ai-pipeline-bash/
 ├── server.sh           # Start the webhook server
 ├── handle_webhook.sh   # Receives and dispatches GitHub events
-├── triage.sh           # Analyzes an issue and posts a plan
+├── pipeline.sh           # Analyzes an issue and posts a pipeline plan
 ├── implement.sh        # Implements the plan and opens a PR
 ├── setup.sh            # Validates your environment before first run
 ├── lib/
@@ -124,7 +124,7 @@ ai-pipeline-bash/
 │   ├── repo_context.sh # Extracts relevant code from your repo
 │   └── hmac.sh         # Webhook signature verification
 ├── scripts/
-│   ├── test-triage.sh      # Manual triage trigger
+│   ├── test-pipeline.sh      # Manual pipeline trigger
 │   ├── test-implement.sh   # Manual implement trigger
 │   ├── monitor.sh          # Watch logs live
 │   └── cleanup-branches.sh # Remove old fix/* branches
@@ -141,7 +141,7 @@ ai-pipeline-bash/
 tail -f logs/server.log
 
 # Log for a specific issue
-tail -f logs/triage-42.log
+tail -f logs/pipeline-42.log
 tail -f logs/implement-42.log
 ```
 
@@ -165,7 +165,7 @@ Only those usernames will be able to approve implementation.
 |--------|---------|
 | Validate setup | `bash setup.sh` |
 | Start the bot | `bash server.sh` |
-| Test triage manually | `bash scripts/test-triage.sh <issue_number>` |
+| Test pipeline manually | `bash scripts/test-pipeline.sh <issue_number>` |
 | Test implement manually | `bash scripts/test-implement.sh <issue_number>` |
 | Watch live logs | `bash scripts/monitor.sh` |
 | Clean up old branches | `bash scripts/cleanup-branches.sh` |

@@ -33,7 +33,7 @@ fi
 
 # ── Banner ────────────────────────────────────────────────────────────────────
 echo "──────────────────────────────────────────────"
-echo "  AI Triage Bot (bash) — Webhook Server"
+echo "  AI Pipeline Bot (bash) — Webhook Server"
 echo "──────────────────────────────────────────────"
 echo "  Port    : $PORT"
 echo "  Provider: ${AI_PROVIDER:-anthropic}"

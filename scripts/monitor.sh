@@ -16,7 +16,7 @@ CYAN='\033[0;36m'; BOLD='\033[1m'; DIM='\033[2m'; NC='\033[0m'
 
 while true; do
   clear
-  echo -e "${BOLD}  AI Triage Bot (bash) — Live Monitor${NC}  $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  echo -e "${BOLD}  AI Pipeline Bot (bash) — Live Monitor${NC}  $(date -u '+%Y-%m-%dT%H:%M:%SZ')"
   echo "──────────────────────────────────────────────────────"
 
   # ── Health check ────────────────────────────────────────────────────────────
@@ -55,16 +55,16 @@ while true; do
     echo -e "  ${DIM}No server log yet${NC}"
   fi
 
-  # ── Recent triage logs ───────────────────────────────────────────────────────
-  echo -e "\n${CYAN}RECENT TRIAGE${NC}"
-  TRIAGE_LOGS=$(ls -t logs/triage-*.log 2>/dev/null | head -3)
-  if [[ -z "$TRIAGE_LOGS" ]]; then
-    echo -e "  ${DIM}No triage logs yet${NC}"
+  # ── Recent pipeline logs ───────────────────────────────────────────────────────
+  echo -e "\n${CYAN}RECENT PIPELINE${NC}"
+  PIPELINE_LOGS=$(ls -t logs/pipeline-*.log 2>/dev/null | head -3)
+  if [[ -z "$PIPELINE_LOGS" ]]; then
+    echo -e "  ${DIM}No pipeline logs yet${NC}"
   else
     while IFS= read -r logfile; do
       echo -e "  ${DIM}${logfile}${NC}"
       tail -2 "$logfile" | while IFS= read -r line; do echo "    $line"; done
-    done <<< "$TRIAGE_LOGS"
+    done <<< "$PIPELINE_LOGS"
   fi
 
   # ── Recent implement logs ────────────────────────────────────────────────────
