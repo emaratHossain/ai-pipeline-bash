@@ -92,8 +92,15 @@ case "$AI_PROVIDER" in
   openrouter)
     check_var OPENROUTER_API_KEY
     check_var OPENROUTER_MODEL ;;
+  opencode)
+    OPENCODE_BIN="${OPENCODE_PATH:-opencode}"
+    if command -v "$OPENCODE_BIN" &>/dev/null; then
+      ok "opencode → $(command -v "$OPENCODE_BIN")"
+    else
+      fail "opencode not found. Install: npm install -g opencode@latest"
+    fi ;;
   *)
-    fail "Unknown AI_PROVIDER '$AI_PROVIDER' — must be 'anthropic' or 'openrouter'" ;;
+    fail "Unknown AI_PROVIDER '$AI_PROVIDER' — must be 'anthropic', 'openrouter', or 'opencode'" ;;
 esac
 
 # ── 4. GITHUB_REPO format ─────────────────────────────────────────────────────

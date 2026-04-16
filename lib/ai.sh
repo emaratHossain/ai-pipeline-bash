@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# lib/ai.sh — Provider-agnostic AI helpers (Anthropic + OpenRouter)
+# lib/ai.sh — Provider-agnostic AI helpers (Anthropic + OpenRouter + OpenCode)
 
 # Generate a pipeline plan as markdown text
 # Usage: ai_pipeline <prompt>
@@ -23,6 +23,7 @@ None — this is a mock response."
   case "${AI_PROVIDER:-anthropic}" in
     anthropic)  _anthropic_text "$system" "$prompt" ;;
     openrouter) _openrouter_text "$system" "$prompt" ;;
+    opencode)   _opencode_text "$prompt" ;;
     *)
       echo "[ai] ERROR: Unknown AI_PROVIDER '${AI_PROVIDER}'" >&2
       return 1
@@ -68,6 +69,11 @@ Rules:
   case "${AI_PROVIDER:-anthropic}" in
     anthropic)  raw=$(_anthropic_text "$system" "$user_prompt") ;;
     openrouter) raw=$(_openrouter_text "$system" "$user_prompt") ;;
+    opencode)
+      # OpenCode writes files directly — implement.sh handles this separately
+      echo "[ai] ERROR: ai_implement should not be called for opencode provider" >&2
+      return 1
+      ;;
     *)
       echo "[ai] ERROR: Unknown AI_PROVIDER '${AI_PROVIDER}'" >&2
       return 1
@@ -167,4 +173,54 @@ _openrouter_text() {
   fi
 
   echo "$text"
+}
+
+# ── Internal: OpenCode CLI ────────────────────────────────────────────────────
+_opencode_text() {
+  local prompt="$1"
+  local bin="${OPENCODE_PATH:-opencode}"
+  local repo="${REPO_PATH:-.}"
+  local timeout="${OPENCODE_TIMEOUT:-300}"
+
+  if ! command -v "$bin" &>/dev/null; then
+    echo "[ai] ERROR: opencode not found at '${bin}'. Install: npm install -g opencode@latest" >&2
+    return 1
+  fi
+
+  local text
+  text=$(
+    timeout "$timeout" "$bin" run \
+      --format json \
+      --dir "$repo" \
+      "$prompt" 2>/dev/null \
+    | while IFS= read -r line; do
+        echo "$line" | jq -r 'select(.type == "text") | .part.text // empty' 2>/dev/null
+      done
+  )
+
+  if [[ -z "$text" ]]; then
+    echo "[ai] ERROR: OpenCode returned no output" >&2
+    return 1
+  fi
+
+  echo "$text"
+}
+
+# Run OpenCode for implementation — writes files directly to repo
+# Usage: opencode_implement <prompt>
+opencode_implement() {
+  local prompt="$1"
+  local bin="${OPENCODE_PATH:-opencode}"
+  local repo="${REPO_PATH:-.}"
+  local timeout="${OPENCODE_TIMEOUT:-600}"
+
+  if ! command -v "$bin" &>/dev/null; then
+    echo "[ai] ERROR: opencode not found at '${bin}'. Install: npm install -g opencode@latest" >&2
+    return 1
+  fi
+
+  echo "[ai] Running OpenCode for implementation (timeout: ${timeout}s)..."
+  timeout "$timeout" "$bin" run \
+    --dir "$repo" \
+    "$prompt"
 }

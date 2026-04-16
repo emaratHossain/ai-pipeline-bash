@@ -92,52 +92,83 @@ git -C "$REPO_PATH" checkout -b "$BRANCH"
 
 # ── Call AI for implementation ────────────────────────────────────────────────
 log "Calling AI for implementation (provider: ${AI_PROVIDER:-anthropic})"
-AI_JSON=$(ai_implement "$PLAN" "$CONTEXT" "$ISSUE_TITLE")
 
-if [[ -z "$AI_JSON" ]]; then
-  log "ERROR: AI returned empty response"
-  exit 1
-fi
+PR_TITLE="fix: issue #${ISSUE_NUMBER}"
+PR_BODY=""
 
-# ── Apply file changes ────────────────────────────────────────────────────────
-PR_TITLE=$(echo "$AI_JSON" | jq -r '.pr_title // "fix: issue #'"$ISSUE_NUMBER"'"')
-PR_BODY=$(echo  "$AI_JSON" | jq -r '.pr_body  // ""')
-FILE_COUNT=$(echo "$AI_JSON" | jq '.files | length')
+if [[ "${AI_PROVIDER:-anthropic}" == "opencode" ]]; then
 
-log "AI returned $FILE_COUNT file(s) to modify"
+  # ── OpenCode: writes files directly into the repo ──────────────────────────
+  IMPL_PROMPT=$(cat <<PROMPT
+You are implementing the approved plan for GitHub issue #${ISSUE_NUMBER}.
+The repository is at: ${REPO_PATH}
 
-if [[ "$FILE_COUNT" -eq 0 ]]; then
-  log "WARNING: AI returned no file changes — PR will have no commits"
-fi
+## Issue
+${ISSUE_TITLE}
 
-REAL_REPO=$(realpath "$REPO_PATH")
-MODIFIED=0
+## Approved Plan
+${PLAN}
 
-while IFS= read -r file_entry; do
-  FILE_PATH=$(echo "$file_entry" | jq -r '.path')
-  FILE_CONTENT=$(echo "$file_entry" | jq -r '.content')
+## Instructions
+- Explore the repo, implement every change in the plan precisely, and save all files
+- Do NOT run git commands (add, commit, push, checkout) — the server handles git
+- Do NOT create a pull request — the server handles that
+- Do NOT modify files outside the scope of the plan
+- If a file referenced in the plan does not exist, create it
+PROMPT
+)
 
-  # ── Security: block path traversal (including symlinks) ────────────────────
-  FULL_PATH=$(realpath -m "$REPO_PATH/$FILE_PATH")
-  if [[ "$FULL_PATH" != "$REAL_REPO"/* ]]; then
-    log "SECURITY: Blocked path traversal attempt: $FILE_PATH"
-    continue
+  opencode_implement "$IMPL_PROMPT"
+  PR_TITLE="fix: ${ISSUE_TITLE} (closes #${ISSUE_NUMBER})"
+  PR_BODY="Implemented by OpenCode following the approved pipeline plan."
+
+else
+
+  # ── Anthropic / OpenRouter: returns JSON with file changes ─────────────────
+  AI_JSON=$(ai_implement "$PLAN" "$CONTEXT" "$ISSUE_TITLE")
+
+  if [[ -z "$AI_JSON" ]]; then
+    log "ERROR: AI returned empty response"
+    exit 1
   fi
 
-  # Create parent dirs if needed
-  mkdir -p "$(dirname "$FULL_PATH")"
+  PR_TITLE=$(echo "$AI_JSON" | jq -r '.pr_title // "fix: issue #'"$ISSUE_NUMBER"'"')
+  PR_BODY=$(echo  "$AI_JSON" | jq -r '.pr_body  // ""')
+  FILE_COUNT=$(echo "$AI_JSON" | jq '.files | length')
 
-  # Write file content
-  printf '%s' "$FILE_CONTENT" > "$FULL_PATH"
-  git -C "$REPO_PATH" add "$FILE_PATH"
-  MODIFIED=$((MODIFIED + 1))
-  log "Modified: $FILE_PATH"
+  log "AI returned $FILE_COUNT file(s) to modify"
 
-done < <(echo "$AI_JSON" | jq -c '.files[]')
+  if [[ "$FILE_COUNT" -eq 0 ]]; then
+    log "WARNING: AI returned no file changes — PR will have no commits"
+  fi
 
-if [[ "$MODIFIED" -eq 0 && "$FILE_COUNT" -gt 0 ]]; then
-  log "ERROR: All file writes were blocked (path traversal attempts?)"
-  exit 1
+  REAL_REPO=$(realpath "$REPO_PATH")
+  MODIFIED=0
+
+  while IFS= read -r file_entry; do
+    FILE_PATH=$(echo "$file_entry" | jq -r '.path')
+    FILE_CONTENT=$(echo "$file_entry" | jq -r '.content')
+
+    # ── Security: block path traversal (including symlinks) ──────────────────
+    FULL_PATH=$(realpath -m "$REPO_PATH/$FILE_PATH")
+    if [[ "$FULL_PATH" != "$REAL_REPO"/* ]]; then
+      log "SECURITY: Blocked path traversal attempt: $FILE_PATH"
+      continue
+    fi
+
+    mkdir -p "$(dirname "$FULL_PATH")"
+    printf '%s' "$FILE_CONTENT" > "$FULL_PATH"
+    git -C "$REPO_PATH" add "$FILE_PATH"
+    MODIFIED=$((MODIFIED + 1))
+    log "Modified: $FILE_PATH"
+
+  done < <(echo "$AI_JSON" | jq -c '.files[]')
+
+  if [[ "$MODIFIED" -eq 0 && "$FILE_COUNT" -gt 0 ]]; then
+    log "ERROR: All file writes were blocked (path traversal attempts?)"
+    exit 1
+  fi
+
 fi
 
 # ── Commit ────────────────────────────────────────────────────────────────────
