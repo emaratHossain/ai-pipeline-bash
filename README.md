@@ -7,7 +7,7 @@ A lightweight GitHub bot that automatically analyzes new issues with AI and impl
 ## What It Does
 
 1. **A new issue is opened** on your GitHub repo
-2. **The bot analyzes it** using AI (Anthropic Claude or OpenRouter) and posts a plan comment like:
+2. **The bot analyzes it** using AI and posts a plan comment like:
 
    > ## 🤖 AI Pipeline Plan
    > **Type:** Bug Fix
@@ -33,6 +33,7 @@ A lightweight GitHub bot that automatically analyzes new issues with AI and impl
 | `curl` | Pre-installed on most systems |
 | `openssl` | Pre-installed on most systems |
 | `git` | Pre-installed on most systems |
+| `opencode` | `npm install -g opencode@latest` *(if using OpenCode provider)* |
 
 ---
 
@@ -41,7 +42,7 @@ A lightweight GitHub bot that automatically analyzes new issues with AI and impl
 ### 1. Clone the repo
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/emaratHossain/ai-pipeline-bash.git
 cd ai-pipeline-bash
 ```
 
@@ -60,11 +61,43 @@ Open `.env` and fill in these values:
 | `GITHUB_WEBHOOK_SECRET` | Any long random string — you'll use the same value in GitHub webhook settings |
 | `BOT_USERNAME` | The GitHub username whose token you're using |
 | `REPO_PATH` | Absolute path to a local clone of your repo (e.g. `/home/alice/my-project`) |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key (get one at console.anthropic.com) |
+| `AI_PROVIDER` | `opencode`, `anthropic`, or `openrouter` — see below |
 
-> **Using OpenRouter instead of Anthropic?** Set `AI_PROVIDER=openrouter`, add `OPENROUTER_API_KEY` and `OPENROUTER_MODEL`.
+### 3. Choose your AI provider
 
-### 3. Run the setup validator
+#### OpenCode (recommended — free)
+
+Uses your locally installed OpenCode CLI. It explores the repo intelligently with real file tools.
+
+```env
+AI_PROVIDER=opencode
+OPENCODE_PATH=opencode        # path to binary, default: opencode
+OPENCODE_TIMEOUT=300          # seconds for plan step (default: 300)
+```
+
+Install OpenCode first:
+```bash
+npm install -g opencode@latest
+```
+
+#### Anthropic
+
+```env
+AI_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+#### OpenRouter (free models available)
+
+```env
+AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-...
+OPENROUTER_MODEL=google/gemini-2.0-flash-exp:free
+```
+
+Free models on OpenRouter: `google/gemini-2.0-flash-exp:free`, `meta-llama/llama-3.3-70b-instruct:free`
+
+### 4. Run the setup validator
 
 ```bash
 bash setup.sh
@@ -72,7 +105,7 @@ bash setup.sh
 
 This checks all dependencies and your `.env` values. Fix any errors it reports, then re-run until you see **"All checks passed"**.
 
-### 4. Configure the GitHub Webhook
+### 5. Configure the GitHub Webhook
 
 In your GitHub repo go to **Settings → Webhooks → Add webhook**:
 
@@ -83,7 +116,7 @@ In your GitHub repo go to **Settings → Webhooks → Add webhook**:
 
 > If running locally, use a tunnel like [ngrok](https://ngrok.com): `ngrok http 3000` and use the generated URL.
 
-### 5. Start the bot
+### 6. Start the bot
 
 ```bash
 bash server.sh
@@ -93,9 +126,21 @@ The bot is now listening. Open an issue on your repo to test it.
 
 ---
 
+## How Each Provider Works
+
+| | OpenCode | Anthropic | OpenRouter |
+|---|---|---|---|
+| Cost | Free | Paid | Free models available |
+| Repo exploration | Reads files with real tools | Keyword-based context | Keyword-based context |
+| Plan quality | Best (sees full context) | Good | Good |
+| Implementation | Writes files directly | Returns JSON → bot writes files | Returns JSON → bot writes files |
+| Requires API key | No | Yes | Yes |
+
+---
+
 ## Testing Without a Real Webhook
 
-You can trigger pipeline or implementation manually:
+You can trigger the pipeline or implementation manually:
 
 ```bash
 # Simulate pipeline on an existing issue
@@ -113,23 +158,23 @@ To test without making real AI calls, set `MOCK_MODE=true` in your `.env`.
 
 ```
 ai-pipeline-bash/
-├── server.sh           # Start the webhook server
-├── handle_webhook.sh   # Receives and dispatches GitHub events
-├── pipeline.sh           # Analyzes an issue and posts a pipeline plan
-├── implement.sh        # Implements the plan and opens a PR
-├── setup.sh            # Validates your environment before first run
+├── server.sh             # Start the webhook server
+├── handle_webhook.sh     # Receives and dispatches GitHub events
+├── pipeline.sh           # Analyzes an issue and posts a plan
+├── implement.sh          # Implements the plan and opens a PR
+├── setup.sh              # Validates your environment before first run
 ├── lib/
-│   ├── ai.sh           # AI API calls (Anthropic / OpenRouter)
-│   ├── github.sh       # GitHub API helpers
-│   ├── repo_context.sh # Extracts relevant code from your repo
-│   └── hmac.sh         # Webhook signature verification
+│   ├── ai.sh             # AI API calls (Anthropic / OpenRouter / OpenCode)
+│   ├── github.sh         # GitHub API helpers
+│   ├── repo_context.sh   # Extracts relevant code from your repo
+│   └── hmac.sh           # Webhook signature verification
 ├── scripts/
-│   ├── test-pipeline.sh      # Manual pipeline trigger
-│   ├── test-implement.sh   # Manual implement trigger
-│   ├── monitor.sh          # Watch logs live
+│   ├── test-pipeline.sh  # Manual pipeline trigger
+│   ├── test-implement.sh # Manual implement trigger
+│   ├── monitor.sh        # Watch logs live
 │   └── cleanup-branches.sh # Remove old fix/* branches
-├── logs/               # Server and per-issue logs
-└── .env.example        # Config template
+├── logs/                 # Server and per-issue logs
+└── .env.example          # Config template
 ```
 
 ---
